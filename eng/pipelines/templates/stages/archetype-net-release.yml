@@ -132,7 +132,7 @@ stages:
           - ${{if ne(artifact.options.skipPublishDocs, 'true')}}:
             - deployment: PublishDocs
               displayName: Publish Docs to GitHub pages
-              condition: and(succeeded(), ne(variables['Skip.PublishDocs'], 'true'))
+              condition: ne(variables['Skip.PublishDocs'], 'true')
               environment: githubio
               dependsOn: PublishPackage
 

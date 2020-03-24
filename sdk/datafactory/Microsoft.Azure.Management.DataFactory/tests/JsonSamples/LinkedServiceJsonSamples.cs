@@ -1723,7 +1723,8 @@ namespace DataFactory.Tests.JsonSamples
                 type: ""SecureString"",
                 value: ""some secret""
             },
-            useSystemTrustStore : true
+            useSystemTrustStore : true,
+            allowLargeResults : true
         }
     }
 }
@@ -2577,6 +2578,90 @@ namespace DataFactory.Tests.JsonSamples
             password : {
                 value : ""fakeKey"",
                 type : ""SecureString""
+            }
+        }
+    }
+}";
+
+        [JsonSample]
+        public const string AzureFileStorageLinkedServiceWithConnectionString = @"
+{
+    name: ""AzureFileStorageLinkedServiceWithConnectionString"",
+    properties:
+    {
+        type: ""AzureFileStorage"",
+        typeProperties:
+        {
+            connectionString: {
+                value : ""fakeConnString"",
+                type : ""SecureString""
+            },
+        }
+    }
+}";
+
+        [JsonSample]
+        public const string AzureFileStorageLinkedServiceWithConnectionStringAndAccountKeyInAKV = @"
+{
+    name: ""AzureFileStorageLinkedServiceWithConnectionStringAndAccountKeyInAKV"",
+    properties:
+    {
+        type: ""AzureFileStorage"",
+        typeProperties:
+        {
+            connectionString: {
+                value : ""fakeConnString"",
+                type : ""SecureString""
+            },
+            accountKey: { 
+                type : ""AzureKeyVaultSecret"", 
+                secretName : ""fakeSecretName"", 
+                store: { 
+                    type : ""LinkedServiceReference"", 
+                    referenceName : ""AKVLinkedService"" 
+                } 
+            }
+        }
+    }
+}";
+
+        [JsonSample]
+        public const string AzureFileStorageLinkedServiceWithSasUri = @"
+{
+    name: ""AzureFileStorageLinkedServiceWithSasUri"",
+    properties:
+    {
+        type: ""AzureFileStorage"",
+        typeProperties:
+        {
+            sasUri: {
+                value : ""fakeSasUri"",
+                type : ""SecureString""
+            },
+        }
+    }
+}";
+
+        [JsonSample]
+        public const string AzureFileStorageLinkedServiceWithSasUriAndSasTokenInAKV = @"
+{
+    name: ""AzureFileStorageLinkedServiceWithSasUriAndSasTokenInAKV"",
+    properties:
+    {
+        type: ""AzureFileStorage"",
+        typeProperties:
+        {
+            sasUri: {
+                value : ""fakeSasUri"",
+                type : ""SecureString""
+            },
+            sasToken: { 
+                type : ""AzureKeyVaultSecret"", 
+                secretName : ""fakeSecretName"", 
+                store: { 
+                    type : ""LinkedServiceReference"", 
+                    referenceName : ""AKVLinkedService"" 
+                } 
             }
         }
     }

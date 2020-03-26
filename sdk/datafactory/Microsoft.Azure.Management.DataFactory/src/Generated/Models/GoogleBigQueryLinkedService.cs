@@ -81,10 +81,7 @@ namespace Microsoft.Azure.Management.DataFactory.Models
         /// authentication. Credentials are encrypted using the integration
         /// runtime credential manager. Type: string (or Expression with
         /// resultType string).</param>
-        /// <param name="allowLargeResults">Specifies whether to query results
-        /// larger than 128MB when using Legacy SQL. The default value is
-        /// true.</param>
-        public GoogleBigQueryLinkedService(object project, string authenticationType, IDictionary<string, object> additionalProperties = default(IDictionary<string, object>), IntegrationRuntimeReference connectVia = default(IntegrationRuntimeReference), string description = default(string), IDictionary<string, ParameterSpecification> parameters = default(IDictionary<string, ParameterSpecification>), IList<object> annotations = default(IList<object>), object additionalProjects = default(object), object requestGoogleDriveScope = default(object), SecretBase refreshToken = default(SecretBase), object clientId = default(object), SecretBase clientSecret = default(SecretBase), object email = default(object), object keyFilePath = default(object), object trustedCertPath = default(object), object useSystemTrustStore = default(object), object encryptedCredential = default(object), object allowLargeResults = default(object))
+        public GoogleBigQueryLinkedService(object project, string authenticationType, IDictionary<string, object> additionalProperties = default(IDictionary<string, object>), IntegrationRuntimeReference connectVia = default(IntegrationRuntimeReference), string description = default(string), IDictionary<string, ParameterSpecification> parameters = default(IDictionary<string, ParameterSpecification>), IList<object> annotations = default(IList<object>), object additionalProjects = default(object), object requestGoogleDriveScope = default(object), SecretBase refreshToken = default(SecretBase), object clientId = default(object), SecretBase clientSecret = default(SecretBase), object email = default(object), object keyFilePath = default(object), object trustedCertPath = default(object), object useSystemTrustStore = default(object), object encryptedCredential = default(object))
             : base(additionalProperties, connectVia, description, parameters, annotations)
         {
             Project = project;
@@ -99,7 +96,6 @@ namespace Microsoft.Azure.Management.DataFactory.Models
             TrustedCertPath = trustedCertPath;
             UseSystemTrustStore = useSystemTrustStore;
             EncryptedCredential = encryptedCredential;
-            AllowLargeResults = allowLargeResults;
             CustomInit();
         }
 
@@ -200,13 +196,6 @@ namespace Microsoft.Azure.Management.DataFactory.Models
         /// </summary>
         [JsonProperty(PropertyName = "typeProperties.encryptedCredential")]
         public object EncryptedCredential { get; set; }
-
-        /// <summary>
-        /// Gets or sets specifies whether to query results larger than 128MB
-        /// when using Legacy SQL. The default value is true.
-        /// </summary>
-        [JsonProperty(PropertyName = "typeProperties.allowLargeResults")]
-        public object AllowLargeResults { get; set; }
 
         /// <summary>
         /// Validate the object.

@@ -1723,8 +1723,7 @@ namespace DataFactory.Tests.JsonSamples
                 type: ""SecureString"",
                 value: ""some secret""
             },
-            useSystemTrustStore : true,
-            allowLargeResults : true
+            useSystemTrustStore : true
         }
     }
 }

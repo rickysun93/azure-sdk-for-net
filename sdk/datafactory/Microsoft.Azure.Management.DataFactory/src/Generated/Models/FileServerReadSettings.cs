@@ -49,6 +49,9 @@ namespace Microsoft.Azure.Management.DataFactory.Models
         /// string).</param>
         /// <param name="enablePartitionDiscovery">Indicates whether to enable
         /// partition discovery.</param>
+        /// <param name="partitionRootPath">Specify the root path where
+        /// partition discovery starts from. Type: string (or Expression with
+        /// resultType string).</param>
         /// <param name="modifiedDatetimeStart">The start of file's modified
         /// datetime. Type: string (or Expression with resultType
         /// string).</param>
@@ -58,7 +61,7 @@ namespace Microsoft.Azure.Management.DataFactory.Models
         /// <param name="fileFilter">Specify a filter to be used to select a
         /// subset of files in the folderPath rather than all files. Type:
         /// string (or Expression with resultType string).</param>
-        public FileServerReadSettings(IDictionary<string, object> additionalProperties = default(IDictionary<string, object>), object maxConcurrentConnections = default(object), object recursive = default(object), object wildcardFolderPath = default(object), object wildcardFileName = default(object), object fileListPath = default(object), bool? enablePartitionDiscovery = default(bool?), object modifiedDatetimeStart = default(object), object modifiedDatetimeEnd = default(object), object fileFilter = default(object))
+        public FileServerReadSettings(IDictionary<string, object> additionalProperties = default(IDictionary<string, object>), object maxConcurrentConnections = default(object), object recursive = default(object), object wildcardFolderPath = default(object), object wildcardFileName = default(object), object fileListPath = default(object), bool? enablePartitionDiscovery = default(bool?), object partitionRootPath = default(object), object modifiedDatetimeStart = default(object), object modifiedDatetimeEnd = default(object), object fileFilter = default(object))
             : base(additionalProperties, maxConcurrentConnections)
         {
             Recursive = recursive;
@@ -66,6 +69,7 @@ namespace Microsoft.Azure.Management.DataFactory.Models
             WildcardFileName = wildcardFileName;
             FileListPath = fileListPath;
             EnablePartitionDiscovery = enablePartitionDiscovery;
+            PartitionRootPath = partitionRootPath;
             ModifiedDatetimeStart = modifiedDatetimeStart;
             ModifiedDatetimeEnd = modifiedDatetimeEnd;
             FileFilter = fileFilter;
@@ -112,6 +116,13 @@ namespace Microsoft.Azure.Management.DataFactory.Models
         /// </summary>
         [JsonProperty(PropertyName = "enablePartitionDiscovery")]
         public bool? EnablePartitionDiscovery { get; set; }
+
+        /// <summary>
+        /// Gets or sets specify the root path where partition discovery starts
+        /// from. Type: string (or Expression with resultType string).
+        /// </summary>
+        [JsonProperty(PropertyName = "partitionRootPath")]
+        public object PartitionRootPath { get; set; }
 
         /// <summary>
         /// Gets or sets the start of file's modified datetime. Type: string

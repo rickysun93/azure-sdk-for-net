@@ -4251,6 +4251,7 @@ namespace DataFactory.Tests.JsonSamples
               ""type"": ""AzureBlobStorageReadSettings"",
               ""recursive"": true,
               ""enablePartitionDiscovery"": true,
+              ""partitionRootPath"": ""abc/"",
               ""wildcardFolderPath"":  ""abc/efg"",
               ""wildcardFileName"":  ""a.csv""
             },

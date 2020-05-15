@@ -75,6 +75,12 @@ namespace Azure.Messaging.ServiceBus
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="ServiceBusReceiver"/> class for mocking.
+        /// </summary>
+        ///
+        protected ServiceBusSessionReceiver() : base() { }
+
+        /// <summary>
         /// Gets the session state.
         /// </summary>
         ///
@@ -118,7 +124,6 @@ namespace Azure.Messaging.ServiceBus
             CancellationToken cancellationToken = default)
         {
             Argument.AssertNotClosed(IsDisposed, nameof(ServiceBusSessionReceiver));
-            Argument.AssertNotNullOrEmpty(sessionState, nameof(sessionState));
             cancellationToken.ThrowIfCancellationRequested<TaskCanceledException>();
             ServiceBusEventSource.Log.SetSessionStateStart(Identifier, SessionId);
 

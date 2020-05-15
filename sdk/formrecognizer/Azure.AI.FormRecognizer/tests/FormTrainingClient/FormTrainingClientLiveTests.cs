@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Azure.AI.FormRecognizer.Training;
-using Azure.Core.Testing;
+using Azure.Core.TestFramework;
 using NUnit.Framework;
 
 namespace Azure.AI.FormRecognizer.Tests
@@ -17,34 +17,14 @@ namespace Azure.AI.FormRecognizer.Tests
     /// These tests have a dependency on live Azure services and may incur costs for the associated
     /// Azure subscription.
     /// </remarks>
-    [LiveOnly]
-    public class FormTrainingClientLiveTests : RecordedTestBase<FormRecognizerTestEnvironment>
+    public class FormTrainingClientLiveTests : FormRecognizerLiveTestBase
     {
-        private readonly Uri _containerUri;
         /// <summary>
         /// Initializes a new instance of the <see cref="FormTrainingClientLiveTests"/> class.
         /// </summary>
         /// <param name="isAsync">A flag used by the Azure Core Test Framework to differentiate between tests for asynchronous and synchronous methods.</param>
         public FormTrainingClientLiveTests(bool isAsync) : base(isAsync)
         {
-            _containerUri = new Uri(TestEnvironment.BlobContainerSasUrl);
-        }
-
-        /// <summary>
-        /// Creates a <see cref="FormTrainingClient" /> with the endpoint and API key provided via environment
-        /// variables and instruments it to make use of the Azure Core Test Framework functionalities.
-        /// </summary>
-        /// <returns>The instrumented <see cref="FormTrainingClient" />.</returns>
-        private FormTrainingClient CreateInstrumentedClient()
-        {
-            var endpointEnvironmentVariable = TestEnvironment.Endpoint;
-            var keyEnvironmentVariable = TestEnvironment.ApiKey;
-
-            var endpoint = new Uri(endpointEnvironmentVariable);
-            var credential = new AzureKeyCredential(keyEnvironmentVariable);
-            var client = new FormTrainingClient(endpoint, credential);
-
-            return InstrumentClient(client);
         }
 
         [Test]
@@ -52,9 +32,15 @@ namespace Azure.AI.FormRecognizer.Tests
         [TestCase(false)]
         public async Task StartTraining(bool labeled)
         {
-            var client = CreateInstrumentedClient();
+            var client = CreateInstrumentedFormTrainingClient();
+            var trainingFilesUri = new Uri(TestEnvironment.BlobContainerSasUrl);
+            TrainingOperation operation;
 
-            TrainingOperation operation = await client.StartTrainingAsync(_containerUri, labeled);
+            // TODO: sanitize body and enable body recording here.
+            using (Recording.DisableRequestBodyRecording())
+            {
+                operation = await client.StartTrainingAsync(trainingFilesUri, labeled);
+            }
 
             await operation.WaitForCompletionAsync();
 
@@ -96,7 +82,7 @@ namespace Azure.AI.FormRecognizer.Tests
         [Test]
         public async Task StartTrainingError()
         {
-            var client = CreateInstrumentedClient();
+            var client = CreateInstrumentedFormTrainingClient();
 
             var containerUrl = new Uri("https://someUrl");
 
@@ -115,7 +101,7 @@ namespace Azure.AI.FormRecognizer.Tests
             Assert.AreEqual(CustomFormModelStatus.Invalid, model.Status);
             Assert.IsNotNull(model.Errors);
             Assert.AreEqual(1, model.Errors.Count);
-            Assert.IsNotNull(model.Errors.FirstOrDefault().Code);
+            Assert.IsNotNull(model.Errors.FirstOrDefault().ErrorCode);
             Assert.IsNotNull(model.Errors.FirstOrDefault().Message);
         }
 
@@ -124,9 +110,15 @@ namespace Azure.AI.FormRecognizer.Tests
         [TestCase(false)]
         public async Task TrainingOps(bool labeled)
         {
-            var client = CreateInstrumentedClient();
+            var client = CreateInstrumentedFormTrainingClient();
+            var trainingFilesUri = new Uri(TestEnvironment.BlobContainerSasUrl);
+            TrainingOperation operation;
 
-            TrainingOperation operation = await client.StartTrainingAsync(_containerUri, labeled);
+            // TODO: sanitize body and enable body recording here.
+            using (Recording.DisableRequestBodyRecording())
+            {
+                operation = await client.StartTrainingAsync(trainingFilesUri, labeled);
+            }
 
             await operation.WaitForCompletionAsync();
 
@@ -169,7 +161,7 @@ namespace Azure.AI.FormRecognizer.Tests
                 }
             }
 
-            CustomFormModelInfo modelInfo = client.GetModelInfosAsync().ToEnumerableAsync().Result.FirstOrDefault();
+            CustomFormModelInfo modelInfo = client.GetCustomModelsAsync().ToEnumerableAsync().Result.FirstOrDefault();
 
             Assert.IsNotNull(modelInfo.ModelId);
             Assert.IsNotNull(modelInfo.CreatedOn);

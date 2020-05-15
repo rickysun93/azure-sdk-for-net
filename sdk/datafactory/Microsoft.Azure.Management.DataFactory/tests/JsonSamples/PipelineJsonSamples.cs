@@ -4236,7 +4236,9 @@ namespace DataFactory.Tests.JsonSamples
             ""storeSettings"": {
               ""type"": ""AzureDataLakeStoreReadSettings"",
               ""recursive"": true,
-              ""enablePartitionDiscovery"": true
+              ""enablePartitionDiscovery"": true,
+              ""listAfter"": ""a"",
+              ""listBefore"": ""b""
             },
             ""formatSettings"": {
               ""type"": ""DelimitedTextReadSettings"",
@@ -4351,7 +4353,8 @@ namespace DataFactory.Tests.JsonSamples
                 ""type"": ""DelimitedTextSource"",
                 ""storeSettings"": {
                     ""type"": ""AzureBlobStorageReadSettings"",
-                    ""recursive"": true
+                    ""recursive"": true,
+                    ""deleteFilesAfterCompletion"": true
                 },
                 ""formatSettings"": {
                     ""type"": ""DelimitedTextReadSettings"",

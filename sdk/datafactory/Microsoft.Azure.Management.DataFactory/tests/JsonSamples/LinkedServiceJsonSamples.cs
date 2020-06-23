@@ -1318,7 +1318,8 @@ namespace DataFactory.Tests.JsonSamples
             servicePrincipalKey : {
                 value : ""fakeKey"",
                 type : ""SecureString""
-            }
+            },
+            azureCloudType: ""AzurePublic""
         }
     }
 }";

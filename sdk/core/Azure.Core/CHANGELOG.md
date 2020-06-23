@@ -1,5 +1,15 @@
 # Release History
 
+## 1.3.0-preview.1 (Unreleased)
+
+### Added
+- `HttpPipeline.CreateClientRequestIdScope` method to allow setting client request id on outgoing requests.
+
+## 1.2.2 (2020-06-04)
+
+### Bugfix
+- Retry server timeouts on .NET Framework.
+
 ## 1.2.1  (2020-04-30)
 
 ### Changed

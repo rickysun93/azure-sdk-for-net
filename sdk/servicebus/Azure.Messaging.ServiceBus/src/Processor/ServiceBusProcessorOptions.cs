@@ -4,12 +4,11 @@
 using System;
 using System.ComponentModel;
 using Azure.Core;
-using Azure.Messaging.ServiceBus.Primitives;
 
 namespace Azure.Messaging.ServiceBus
 {
     /// <summary>
-    /// The baseline set of options that can be specified when creating a <see cref="ServiceBusReceiver"/> or <see cref="ServiceBusProcessor" />
+    /// The baseline set of options that can be specified when creating a <see cref="ServiceBusProcessor" />
     /// to configure its behavior.
     /// </summary>
     public class ServiceBusProcessorOptions
@@ -85,7 +84,7 @@ namespace Azure.Messaging.ServiceBus
         }
         private TimeSpan? _maxReceiveWaitTime;
 
-        /// <summary>Gets or sets the maximum number of concurrent calls to the callback the message pump should initiate. The default value when used with a session processor is 8. For a non-session processor, the default is 1.</summary>
+        /// <summary>Gets or sets the maximum number of concurrent calls to the callback the processor should initiate. The default is 1.</summary>
         /// <value>The maximum number of concurrent calls to the callback.</value>
         public int MaxConcurrentCalls
         {

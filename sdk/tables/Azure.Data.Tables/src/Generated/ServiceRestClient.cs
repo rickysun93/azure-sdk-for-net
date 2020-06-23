@@ -23,6 +23,11 @@ namespace Azure.Data.Tables
         private HttpPipeline _pipeline;
 
         /// <summary> Initializes a new instance of ServiceRestClient. </summary>
+        /// <param name="clientDiagnostics"> The handler for diagnostic messaging in the client. </param>
+        /// <param name="pipeline"> The HTTP pipeline for sending and receiving REST requests and responses. </param>
+        /// <param name="url"> The URL of the service account or table that is the targe of the desired operation. </param>
+        /// <param name="version"> Specifies the version of the operation to use for this request. </param>
+        /// <exception cref="ArgumentNullException"> This occurs when one of the required arguments is null. </exception>
         public ServiceRestClient(ClientDiagnostics clientDiagnostics, HttpPipeline pipeline, string url, string version = "2019-02-02")
         {
             if (url == null)
@@ -61,8 +66,8 @@ namespace Azure.Data.Tables
                 request.Headers.Add("x-ms-client-request-id", requestId);
             }
             request.Headers.Add("Content-Type", "application/xml");
-            using var content = new XmlWriterContent();
-            content.XmlWriter.WriteObjectValue(tableServiceProperties, "TableServiceProperties");
+            var content = new XmlWriterContent();
+            content.XmlWriter.WriteObjectValue(tableServiceProperties, "StorageServiceProperties");
             request.Content = content;
             return message;
         }
@@ -72,7 +77,7 @@ namespace Azure.Data.Tables
         /// <param name="timeout"> The timeout parameter is expressed in seconds. </param>
         /// <param name="requestId"> Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled. </param>
         /// <param name="cancellationToken"> The cancellation token to use. </param>
-        public async ValueTask<ResponseWithHeaders<ServiceSetPropertiesHeaders>> SetPropertiesAsync(TableServiceProperties tableServiceProperties, int? timeout = null, string requestId = null, CancellationToken cancellationToken = default)
+        public async Task<ResponseWithHeaders<ServiceSetPropertiesHeaders>> SetPropertiesAsync(TableServiceProperties tableServiceProperties, int? timeout = null, string requestId = null, CancellationToken cancellationToken = default)
         {
             if (tableServiceProperties == null)
             {
@@ -142,7 +147,7 @@ namespace Azure.Data.Tables
         /// <param name="timeout"> The timeout parameter is expressed in seconds. </param>
         /// <param name="requestId"> Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled. </param>
         /// <param name="cancellationToken"> The cancellation token to use. </param>
-        public async ValueTask<ResponseWithHeaders<TableServiceProperties, ServiceGetPropertiesHeaders>> GetPropertiesAsync(int? timeout = null, string requestId = null, CancellationToken cancellationToken = default)
+        public async Task<ResponseWithHeaders<TableServiceProperties, ServiceGetPropertiesHeaders>> GetPropertiesAsync(int? timeout = null, string requestId = null, CancellationToken cancellationToken = default)
         {
             using var message = CreateGetPropertiesRequest(timeout, requestId);
             await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
@@ -153,9 +158,9 @@ namespace Azure.Data.Tables
                     {
                         TableServiceProperties value = default;
                         var document = XDocument.Load(message.Response.ContentStream, LoadOptions.PreserveWhitespace);
-                        if (document.Element("TableServiceProperties") is XElement tableServicePropertiesElement)
+                        if (document.Element("StorageServiceProperties") is XElement storageServicePropertiesElement)
                         {
-                            value = TableServiceProperties.DeserializeTableServiceProperties(tableServicePropertiesElement);
+                            value = TableServiceProperties.DeserializeTableServiceProperties(storageServicePropertiesElement);
                         }
                         return ResponseWithHeaders.FromValue(value, headers, message.Response);
                     }
@@ -179,9 +184,9 @@ namespace Azure.Data.Tables
                     {
                         TableServiceProperties value = default;
                         var document = XDocument.Load(message.Response.ContentStream, LoadOptions.PreserveWhitespace);
-                        if (document.Element("TableServiceProperties") is XElement tableServicePropertiesElement)
+                        if (document.Element("StorageServiceProperties") is XElement storageServicePropertiesElement)
                         {
-                            value = TableServiceProperties.DeserializeTableServiceProperties(tableServicePropertiesElement);
+                            value = TableServiceProperties.DeserializeTableServiceProperties(storageServicePropertiesElement);
                         }
                         return ResponseWithHeaders.FromValue(value, headers, message.Response);
                     }
@@ -217,7 +222,7 @@ namespace Azure.Data.Tables
         /// <param name="timeout"> The timeout parameter is expressed in seconds. </param>
         /// <param name="requestId"> Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled. </param>
         /// <param name="cancellationToken"> The cancellation token to use. </param>
-        public async ValueTask<ResponseWithHeaders<TableServiceStats, ServiceGetStatisticsHeaders>> GetStatisticsAsync(int? timeout = null, string requestId = null, CancellationToken cancellationToken = default)
+        public async Task<ResponseWithHeaders<TableServiceStats, ServiceGetStatisticsHeaders>> GetStatisticsAsync(int? timeout = null, string requestId = null, CancellationToken cancellationToken = default)
         {
             using var message = CreateGetStatisticsRequest(timeout, requestId);
             await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
@@ -228,9 +233,9 @@ namespace Azure.Data.Tables
                     {
                         TableServiceStats value = default;
                         var document = XDocument.Load(message.Response.ContentStream, LoadOptions.PreserveWhitespace);
-                        if (document.Element("TableServiceStats") is XElement tableServiceStatsElement)
+                        if (document.Element("StorageServiceStats") is XElement storageServiceStatsElement)
                         {
-                            value = TableServiceStats.DeserializeTableServiceStats(tableServiceStatsElement);
+                            value = TableServiceStats.DeserializeTableServiceStats(storageServiceStatsElement);
                         }
                         return ResponseWithHeaders.FromValue(value, headers, message.Response);
                     }
@@ -254,9 +259,9 @@ namespace Azure.Data.Tables
                     {
                         TableServiceStats value = default;
                         var document = XDocument.Load(message.Response.ContentStream, LoadOptions.PreserveWhitespace);
-                        if (document.Element("TableServiceStats") is XElement tableServiceStatsElement)
+                        if (document.Element("StorageServiceStats") is XElement storageServiceStatsElement)
                         {
-                            value = TableServiceStats.DeserializeTableServiceStats(tableServiceStatsElement);
+                            value = TableServiceStats.DeserializeTableServiceStats(storageServiceStatsElement);
                         }
                         return ResponseWithHeaders.FromValue(value, headers, message.Response);
                     }

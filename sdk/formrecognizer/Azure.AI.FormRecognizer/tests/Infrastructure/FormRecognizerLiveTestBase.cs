@@ -4,30 +4,41 @@
 using System;
 using System.Threading.Tasks;
 using Azure.AI.FormRecognizer.Training;
+using Azure.Core;
 using Azure.Core.TestFramework;
 
 namespace Azure.AI.FormRecognizer.Tests
 {
     public class FormRecognizerLiveTestBase : RecordedTestBase<FormRecognizerTestEnvironment>
     {
+        protected TimeSpan PollingInterval => TimeSpan.FromSeconds(Mode == RecordedTestMode.Playback ? 0 : 1);
+
         public FormRecognizerLiveTestBase(bool isAsync) : base(isAsync)
         {
             Sanitizer = new FormRecognizerRecordedTestSanitizer();
-            Matcher = new FormRecognizerRecordMatcher();
         }
 
         /// <summary>
         /// Creates a <see cref="FormTrainingClient" /> with the endpoint and API key provided via environment
         /// variables and instruments it to make use of the Azure Core Test Framework functionalities.
         /// </summary>
+        /// <param name="useTokenCredential">Whether or not to use a <see cref="TokenCredential"/> to authenticate. An <see cref="AzureKeyCredential"/> is used by default.</param>
         /// <returns>The instrumented <see cref="FormTrainingClient" />.</returns>
-        protected FormTrainingClient CreateInstrumentedFormTrainingClient()
+        protected FormTrainingClient CreateInstrumentedFormTrainingClient(bool useTokenCredential = false)
         {
             var endpoint = new Uri(TestEnvironment.Endpoint);
-            var credential = new AzureKeyCredential(TestEnvironment.ApiKey);
-
             var options = Recording.InstrumentClientOptions(new FormRecognizerClientOptions());
-            var client = new FormTrainingClient(endpoint, credential, options);
+            FormTrainingClient client;
+
+            if (useTokenCredential)
+            {
+                client = new FormTrainingClient(endpoint, TestEnvironment.Credential, options);
+            }
+            else
+            {
+                var credential = new AzureKeyCredential(TestEnvironment.ApiKey);
+                client = new FormTrainingClient(endpoint, credential, options);
+            }
 
             return InstrumentClient(client);
         }
@@ -43,15 +54,7 @@ namespace Azure.AI.FormRecognizer.Tests
             var trainingClient = CreateInstrumentedFormTrainingClient();
             var trainingFilesUri = new Uri(TestEnvironment.BlobContainerSasUrl);
 
-            DisposableTrainedModel trainedModel;
-
-            // TODO: sanitize body and enable body recording here.
-            using (Recording.DisableRequestBodyRecording())
-            {
-                trainedModel = await DisposableTrainedModel.TrainModelAsync(trainingClient, trainingFilesUri, useTrainingLabels);
-            }
-
-            return trainedModel;
+            return await DisposableTrainedModel.TrainModelAsync(trainingClient, trainingFilesUri, useTrainingLabels, PollingInterval);
         }
     }
 }

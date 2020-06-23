@@ -6,12 +6,12 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Core;
 using Azure.Messaging.ServiceBus.Core;
 using Azure.Messaging.ServiceBus.Diagnostics;
+using Azure.Messaging.ServiceBus.Plugins;
 
 namespace Azure.Messaging.ServiceBus
 {
@@ -23,7 +23,9 @@ namespace Azure.Messaging.ServiceBus
     /// property. The error handler is specified with the <see cref="ProcessErrorAsync"/> property.
     /// To start processing after the handlers have been specified, call <see cref="StartProcessingAsync"/>.
     /// </summary>
+#pragma warning disable CA1001 // Types that own disposable fields should be disposable
     public class ServiceBusProcessor
+#pragma warning restore CA1001 // Types that own disposable fields should be disposable
     {
         private Func<ProcessMessageEventArgs, Task> _processMessageAsync;
 
@@ -146,26 +148,35 @@ namespace Azure.Messaging.ServiceBus
         /// after completion of message and result in a few false MessageLockLostExceptions temporarily.</remarks>
         public TimeSpan MaxAutoLockRenewalDuration { get; }
 
-        private readonly string[] _sessionIds;
+        /// <summary>
+        ///   The instance of <see cref="ServiceBusEventSource" /> which can be mocked for testing.
+        /// </summary>
+        ///
+        internal ServiceBusEventSource Logger { get; set; } = ServiceBusEventSource.Log;
 
+        private readonly string[] _sessionIds;
+        private readonly EntityScopeFactory _scopeFactory;
+        private readonly IList<ServiceBusPlugin> _plugins;
         private readonly IList<ReceiverManager> _receiverManagers = new List<ReceiverManager>();
 
         /// <summary>
         ///   Initializes a new instance of the <see cref="ServiceBusProcessor"/> class.
         /// </summary>
         ///
-        /// <param name="entityPath"></param>
-        /// <param name="isSessionEntity"></param>
-        /// <param name="sessionIds"></param>
         /// <param name="connection">The <see cref="ServiceBusConnection" /> connection to use for communication with the Service Bus service.</param>
-        /// <param name="options"></param>
+        /// <param name="entityPath">The queue name or subscription path to process messages from.</param>
+        /// <param name="isSessionEntity">Whether or not the processor is associated with a session entity.</param>
+        /// <param name="plugins">The set of plugins to apply to incoming messages.</param>
+        /// <param name="options">The set of options to use when configuring the processor.</param>
+        /// <param name="sessionIds">An optional set of session Ids to limit processing to.</param>
         ///
         internal ServiceBusProcessor(
             ServiceBusConnection connection,
             string entityPath,
             bool isSessionEntity,
+            IList<ServiceBusPlugin> plugins,
             ServiceBusProcessorOptions options,
-            params string[] sessionIds)
+            string[] sessionIds = default)
         {
             Argument.AssertNotNullOrWhiteSpace(entityPath, nameof(entityPath));
             Argument.AssertNotNull(connection, nameof(connection));
@@ -198,7 +209,9 @@ namespace Azure.Messaging.ServiceBus
 
             EntityPath = entityPath;
             IsSessionProcessor = isSessionEntity;
-            _sessionIds = sessionIds;
+            _sessionIds = sessionIds ?? Array.Empty<string>();
+            _scopeFactory = new EntityScopeFactory(EntityPath, FullyQualifiedNamespace);
+            _plugins = plugins;
         }
 
         /// <summary>
@@ -251,7 +264,9 @@ namespace Azure.Messaging.ServiceBus
 
                 if (_processMessageAsync != default)
                 {
+#pragma warning disable CA1065 // Do not raise exceptions in unexpected locations
                     throw new NotSupportedException(Resources.HandlerHasAlreadyBeenAssigned);
+#pragma warning restore CA1065 // Do not raise exceptions in unexpected locations
                 }
                 EnsureNotRunningAndInvoke(() => _processMessageAsync = value);
 
@@ -263,7 +278,9 @@ namespace Azure.Messaging.ServiceBus
 
                 if (_processMessageAsync != value)
                 {
+#pragma warning disable CA1065 // Do not raise exceptions in unexpected locations
                     throw new ArgumentException(Resources.HandlerHasNotBeenAssigned);
+#pragma warning restore CA1065 // Do not raise exceptions in unexpected locations
                 }
 
                 EnsureNotRunningAndInvoke(() => _processMessageAsync = default);
@@ -319,7 +336,9 @@ namespace Azure.Messaging.ServiceBus
 
                 if (_processErrorAsync != default)
                 {
+#pragma warning disable CA1065 // Do not raise exceptions in unexpected locations
                     throw new NotSupportedException(Resources.HandlerHasAlreadyBeenAssigned);
+#pragma warning restore CA1065 // Do not raise exceptions in unexpected locations
                 }
 
                 EnsureNotRunningAndInvoke(() => _processErrorAsync = value);
@@ -331,7 +350,9 @@ namespace Azure.Messaging.ServiceBus
 
                 if (_processErrorAsync != value)
                 {
+#pragma warning disable CA1065 // Do not raise exceptions in unexpected locations
                     throw new ArgumentException(Resources.HandlerHasNotBeenAssigned);
+#pragma warning restore CA1065 // Do not raise exceptions in unexpected locations
                 }
 
                 EnsureNotRunningAndInvoke(() => _processErrorAsync = default);
@@ -370,7 +391,7 @@ namespace Azure.Messaging.ServiceBus
 
         /// <summary>
         /// Optional event that can be set to be notified when a session is about to be closed for processing.
-        /// This means that the most recent ReceiveAsync call timed out so there are currently no messages
+        /// This means that the most recent <see cref="ServiceBusReceiver.ReceiveMessageAsync"/> call timed out so there are currently no messages
         /// available to be received for the session.
         /// </summary>
         [SuppressMessage("Usage", "AZC0002:Ensure all service methods take an optional CancellationToken parameter.", Justification = "Guidance does not apply; this is an event.")]
@@ -412,13 +433,15 @@ namespace Azure.Messaging.ServiceBus
             cancellationToken.ThrowIfCancellationRequested<TaskCanceledException>();
             if (ActiveReceiveTask == null)
             {
-                ServiceBusEventSource.Log.StartProcessingStart(Identifier);
-                await ProcessingStartStopSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                ValidateMessageHandler();
-                ValidateErrorHandler();
+                Logger.StartProcessingStart(Identifier);
+                bool releaseGuard = false;
 
                 try
                 {
+                    await ProcessingStartStopSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    releaseGuard = true;
+                    ValidateMessageHandler();
+                    ValidateErrorHandler();
                     cancellationToken.ThrowIfCancellationRequested<TaskCanceledException>();
 
                     InitializeReceiverManagers();
@@ -434,14 +457,17 @@ namespace Azure.Messaging.ServiceBus
                 }
                 catch (Exception exception)
                 {
-                    ServiceBusEventSource.Log.StartProcessingException(Identifier, exception);
+                    Logger.StartProcessingException(Identifier, exception.ToString());
                     throw;
                 }
                 finally
                 {
-                    ProcessingStartStopSemaphore.Release();
+                    if (releaseGuard)
+                    {
+                        ProcessingStartStopSemaphore.Release();
+                    }
                 }
-                ServiceBusEventSource.Log.StartProcessingComplete(Identifier);
+                Logger.StartProcessingComplete(Identifier);
             }
             else
             {
@@ -469,7 +495,9 @@ namespace Azure.Messaging.ServiceBus
                             _sessionClosingAsync,
                             _processSessionMessageAsync,
                             _processErrorAsync,
-                            MaxConcurrentAcceptSessionsSemaphore));
+                            MaxConcurrentAcceptSessionsSemaphore,
+                            _scopeFactory,
+                            _plugins));
                 }
             }
             else
@@ -482,7 +510,9 @@ namespace Azure.Messaging.ServiceBus
                         Identifier,
                         _options,
                         _processMessageAsync,
-                        _processErrorAsync));
+                        _processErrorAsync,
+                        _scopeFactory,
+                        _plugins));
             }
         }
 
@@ -517,14 +547,16 @@ namespace Azure.Messaging.ServiceBus
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> instance to signal the request to cancel the stop operation.  If the operation is successfully canceled, the <see cref="ServiceBusProcessor" /> will keep running.</param>
         public virtual async Task StopProcessingAsync(CancellationToken cancellationToken = default)
         {
-            cancellationToken.ThrowIfCancellationRequested<TaskCanceledException>();
+            bool releaseGuard = false;
             try
             {
                 if (ActiveReceiveTask != null)
                 {
-                    ServiceBusEventSource.Log.StopProcessingStart(Identifier);
+                    Logger.StopProcessingStart(Identifier);
+                    cancellationToken.ThrowIfCancellationRequested<TaskCanceledException>();
 
                     await ProcessingStartStopSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    releaseGuard = true;
 
                     cancellationToken.ThrowIfCancellationRequested<TaskCanceledException>();
 
@@ -559,14 +591,17 @@ namespace Azure.Messaging.ServiceBus
             }
             catch (Exception exception)
             {
-                ServiceBusEventSource.Log.StopProcessingException(Identifier, exception);
+                Logger.StopProcessingException(Identifier, exception.ToString());
                 throw;
             }
             finally
             {
-                ProcessingStartStopSemaphore.Release();
+                if (releaseGuard)
+                {
+                    ProcessingStartStopSemaphore.Release();
+                }
             }
-            ServiceBusEventSource.Log.StopProcessingComplete(Identifier);
+            Logger.StopProcessingComplete(Identifier);
         }
 
         /// <summary>

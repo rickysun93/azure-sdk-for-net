@@ -22,9 +22,11 @@ Use the client library for Azure Service Bus to:
 
 - **Service Bus namespace:** To interact with Azure Service Bus, you'll also need to have a namespace available. If you are not familiar with creating Azure resources, you may wish to follow the step-by-step guide for [creating a Service Bus namespace using the Azure portal](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-create-namespace-portal). There, you can also find detailed instructions for using the Azure CLI, Azure PowerShell, or Azure Resource Manager (ARM) templates to create a Service bus entity.
 
-- **C# 8.0:** The Azure Service Bus client library makes use of new features that were introduced in C# 8.0.  You can still use the library with older versions of C#, but some of its functionality won't be available.  In order to enable these features, you need to [target .NET Core 3.0](https://docs.microsoft.com/en-us/dotnet/standard/frameworks#how-to-specify-target-frameworks) or [specify the language version](https://docs.microsoft.com/en-gb/dotnet/csharp/language-reference/configure-language-version#override-a-default) you want to use (8.0 or above).  If you are using Visual Studio, versions prior to Visual Studio 2019 are not compatible with the tools needed to build C# 8.0 projects.  Visual Studio 2019, including the free Community edition, can be downloaded [here](https://visualstudio.microsoft.com/vs/).
+- **C# 8.0:** The Azure Service Bus client library makes use of new features that were introduced in C# 8.0.  In order to take advantage of the C# 8.0 syntax, it is recommended that you compile using the [.NET Core SDK](https://dotnet.microsoft.com/download) 3.0 or higher with a [language version](https://docs.microsoft.com/dotnet/csharp/language-reference/configure-language-version#override-a-default) of `latest`.  It is also possible to compile with the .NET Core SDK 2.1.x using a language version of `preview`.  Visual Studio users wishing to take advantage of the C# 8.0 syntax will need to use Visual Studio 2019 or later.  Visual Studio 2019, including the free Community edition, can be downloaded [here](https://visualstudio.microsoft.com).
 
-  **Important Note:** The use of C# 8.0 is mandatory to run the [examples](#examples) and the [samples](#next-steps) without modification.  You can still run the samples if you decide to tweak them.
+  You can still use the library with previous C# language versions, but will need to manage asynchronous enumerable and asynchronous disposable members manually rather than benefiting from the new syntax.  You may still target any framework version supported by your .NET Core SDK, including earlier versions of .NET Core or the .NET framework.  For more information, see: [how to specify target frameworks](https://docs.microsoft.com/dotnet/standard/frameworks#how-to-specify-target-frameworks).  
+  
+  **Important Note:** In order to build or run the [examples](#examples) and the [samples](#next-steps) without modification, use of C# 8.0 is mandatory.  You can still run the samples if you decide to tweak them for other language versions.
 
 To quickly create the needed Service Bus resources in Azure and to receive a connection string for them, you can deploy our sample template by clicking:
 
@@ -35,7 +37,7 @@ To quickly create the needed Service Bus resources in Azure and to receive a con
 Install the Azure Service Bus client library for .NET with [NuGet](https://www.nuget.org/):
 
 ```PowerShell
-dotnet add package Azure.Messaging.ServiceBus --version 7.0.0-preview.2
+dotnet add package Azure.Messaging.ServiceBus --version 7.0.0-preview.3
 ```
 
 ### Authenticate the client
@@ -114,22 +116,22 @@ ServiceBusSender sender = client.CreateSender(queueName);
 ServiceBusMessage message = new ServiceBusMessage(Encoding.UTF8.GetBytes("Hello world!"));
 
 // send the message
-await sender.SendAsync(message);
+await sender.SendMessageAsync(message);
 
 // create a receiver that we can use to receive the message
 ServiceBusReceiver receiver = client.CreateReceiver(queueName);
 
 // the received message is a different type as it contains some service set properties
-ServiceBusReceivedMessage receivedMessage = await receiver.ReceiveAsync();
+ServiceBusReceivedMessage receivedMessage = await receiver.ReceiveMessageAsync();
 
 // get the message body as a string
-string body = Encoding.UTF8.GetString(receivedMessage.Body.ToArray());
+string body = receivedMessage.Body.ToString();
 Console.WriteLine(body);
 ```
 
 ### Send and receive a batch of messages
 
-There are two ways of sending several messages at once. The first way uses the `SendAsync`
+There are two ways of sending several messages at once. The first way uses the `SendMessagesAsync`
 overload that accepts an IEnumerable of `ServiceBusMessage`. With this method, we will attempt to fit all of
 the supplied messages in a single message batch that we will send to the service. If the messages are too large
 to fit in a single batch, the operation will throw an exception.
@@ -139,19 +141,19 @@ IList<ServiceBusMessage> messages = new List<ServiceBusMessage>();
 messages.Add(new ServiceBusMessage(Encoding.UTF8.GetBytes("First")));
 messages.Add(new ServiceBusMessage(Encoding.UTF8.GetBytes("Second")));
 // send the messages
-await sender.SendAsync(messages);
+await sender.SendMessagesAsync(messages);
 ```
 The second way of doing this is using safe-batching. With safe-batching, you can create a 
 `ServiceBusMessageBatch` object, which will allow you to attempt to add messages one at a time to the 
 batch using the `TryAdd` method. If the message cannot fit in the batch, `TryAdd` will return false.
 
 ```C# Snippet:ServiceBusSendAndReceiveSafeBatch
-ServiceBusMessageBatch messageBatch = await sender.CreateBatchAsync();
-messageBatch.TryAdd(new ServiceBusMessage(Encoding.UTF8.GetBytes("First")));
-messageBatch.TryAdd(new ServiceBusMessage(Encoding.UTF8.GetBytes("Second")));
+ServiceBusMessageBatch messageBatch = await sender.CreateMessageBatchAsync();
+messageBatch.TryAddMessage(new ServiceBusMessage(Encoding.UTF8.GetBytes("First")));
+messageBatch.TryAddMessage(new ServiceBusMessage(Encoding.UTF8.GetBytes("Second")));
 
 // send the message batch
-await sender.SendAsync(messageBatch);
+await sender.SendMessagesAsync(messageBatch);
 ```
 
 ### Complete a message
@@ -171,16 +173,16 @@ ServiceBusSender sender = client.CreateSender(queueName);
 ServiceBusMessage message = new ServiceBusMessage(Encoding.UTF8.GetBytes("Hello world!"));
 
 // send the message
-await sender.SendAsync(message);
+await sender.SendMessageAsync(message);
 
 // create a receiver that we can use to receive and settle the message
 ServiceBusReceiver receiver = client.CreateReceiver(queueName);
 
 // the received message is a different type as it contains some service set properties
-ServiceBusReceivedMessage receivedMessage = await receiver.ReceiveAsync();
+ServiceBusReceivedMessage receivedMessage = await receiver.ReceiveMessageAsync();
 
 // complete the message, thereby deleting it from the service
-await receiver.CompleteAsync(receivedMessage);
+await receiver.CompleteMessageAsync(receivedMessage);
 ```
 
 ### Abandon a message
@@ -188,24 +190,24 @@ await receiver.CompleteAsync(receivedMessage);
 Abandoning a message releases our receiver's lock, which allows the message to be received by this or other receivers.
 
 ```C# Snippet:ServiceBusAbandonMessage
-ServiceBusReceivedMessage receivedMessage = await receiver.ReceiveAsync();
+ServiceBusReceivedMessage receivedMessage = await receiver.ReceiveMessageAsync();
 
 // abandon the message, thereby releasing the lock and allowing it to be received again by this or other receivers
-await receiver.AbandonAsync(receivedMessage);
+await receiver.AbandonMessageAsync(receivedMessage);
 ```
 
 ### Defer a message
 
-Deferring a message will prevent it from being received again using the `ReceiveAsync` or `ReceiveBatchAsync` methods.
-Instead, there are separate methods, `ReceiveDeferredMessageAsync` and `ReceiveDeferredMessageBatchAsync` 
+Deferring a message will prevent it from being received again using the `ReceiveMessageAsync` or `ReceiveMessagesAsync` methods.
+Instead, there are separate methods, `ReceiveDeferredMessageAsync` and `ReceiveDeferredMessagesAsync` 
 for receiving deferred messages.
 
 ```C# Snippet:ServiceBusDeferMessage
-ServiceBusReceivedMessage receivedMessage = await receiver.ReceiveAsync();
+ServiceBusReceivedMessage receivedMessage = await receiver.ReceiveMessageAsync();
 
 // defer the message, thereby preventing the message from being received again without using
 // the received deferred message API.
-await receiver.DeferAsync(receivedMessage);
+await receiver.DeferMessageAsync(receivedMessage);
 
 // receive the deferred message by specifying the service set sequence number of the original
 // received message
@@ -219,14 +221,14 @@ by the service after they have been received a certain number of times. Applicat
 their requirements. When a message is dead lettered it is actually moved to a subqueue of the original queue.
 
 ```C# Snippet:ServiceBusDeadLetterMessage
-ServiceBusReceivedMessage receivedMessage = await receiver.ReceiveAsync();
+ServiceBusReceivedMessage receivedMessage = await receiver.ReceiveMessageAsync();
 
 // deadletter the message, thereby preventing the message from being received again without receiving from the dead letter queue.
-await receiver.DeadLetterAsync(receivedMessage);
+await receiver.DeadLetterMessageAsync(receivedMessage);
 
 // receive the dead lettered message with receiver scoped to the dead letter queue.
 ServiceBusReceiver dlqReceiver = client.CreateDeadLetterReceiver(queueName);
-ServiceBusReceivedMessage dlqMessage = await dlqReceiver.ReceiveAsync();
+ServiceBusReceivedMessage dlqMessage = await dlqReceiver.ReceiveMessageAsync();
 ```
 
 ### Using the Processor
@@ -247,12 +249,12 @@ await using var client = new ServiceBusClient(connectionString);
 ServiceBusSender sender = client.CreateSender(queueName);
 
 // create a message batch that we can send
-ServiceBusMessageBatch messageBatch = await sender.CreateBatchAsync();
-messageBatch.TryAdd(new ServiceBusMessage(Encoding.UTF8.GetBytes("First")));
-messageBatch.TryAdd(new ServiceBusMessage(Encoding.UTF8.GetBytes("Second")));
+ServiceBusMessageBatch messageBatch = await sender.CreateMessageBatchAsync();
+messageBatch.TryAddMessage(new ServiceBusMessage(Encoding.UTF8.GetBytes("First")));
+messageBatch.TryAddMessage(new ServiceBusMessage(Encoding.UTF8.GetBytes("Second")));
 
 // send the message batch
-await sender.SendAsync(messageBatch);
+await sender.SendMessagesAsync(messageBatch);
 
 // get the options to use for configuring the processor
 var options = new ServiceBusProcessorOptions
@@ -277,7 +279,7 @@ processor.ProcessErrorAsync += ErrorHandler;
 
 async Task MessageHandler(ProcessMessageEventArgs args)
 {
-    string body = Encoding.UTF8.GetString(args.Message.Body.ToArray());
+    string body = args.Message.Body.ToString();
     Console.WriteLine(body);
 
     // we can evaluate application logic and use that to determine how to settle the message.

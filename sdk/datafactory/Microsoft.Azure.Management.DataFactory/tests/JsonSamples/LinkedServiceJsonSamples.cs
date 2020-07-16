@@ -2596,6 +2596,8 @@ namespace DataFactory.Tests.JsonSamples
                 value : ""fakeConnString"",
                 type : ""SecureString""
             },
+            fileShare: ""test"",
+            snapshot: ""2020-06-18T02:35.43""
         }
     }
 }";

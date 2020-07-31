@@ -1,6 +1,14 @@
 # Release History
 
-## 1.1.0-preview.1 (Unreleased)
+## 5.1.0-preview.1 (Unreleased)
+### Breaking changes
+- It defaults to the latest supported API version, which currently is `3.1-preview.1`.
+Note that new functionality hasn't been implemented in the client library.
+
+## 5.0.0 (2020-07-27)
+- Re-release of version `1.0.1` with updated version `5.0.0`.
+
+## 1.0.1 (2020-06-23)
 
 ### Fixes
 - The document confidence scores for analyze sentiment now contains the values the Text Analytics service returns ([12889](https://github.com/Azure/azure-sdk-for-net/issues/12889)).

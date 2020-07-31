@@ -59,6 +59,11 @@ namespace Azure.Search.Documents.Tests
         public string StorageAccountConnectionString => $"DefaultEndpointsProtocol=https;AccountName={StorageAccountName};AccountKey={StorageAccountKey};EndpointSuffix=core.windows.net";
 
         /// <summary>
+        /// The Cognitive Services key.
+        /// </summary>
+        public string CognitiveServicesKey => TestFixture.TestEnvironment.SearchCognitiveKey;
+
+        /// <summary>
         /// The name of the blob container.
         /// </summary>
         public string BlobContainerName
@@ -176,6 +181,25 @@ namespace Azure.Search.Documents.Tests
         {
             var resources = new SearchResources(fixture);
             await resources.CreateSearchServiceIndexAndDocumentsAsync();
+            return resources;
+        }
+
+        /// <summary>
+        /// Creates a new Search service resources with sample data
+        /// loaded into a new blob container but no index.
+        /// </summary>
+        /// <param name="fixture">
+        /// The TestFixture with context about our current test run,
+        /// recordings, instrumentation, etc.
+        /// </param>
+        /// <param name="populate">
+        /// Whether to populate the container with Hotel documents. The default is false.
+        /// </param>
+        /// <returns>A new <see cref="SearchResources"/> context.</returns>
+        public static async Task<SearchResources> CreateWithBlobStorageAsync(SearchTestBase fixture, bool populate = false)
+        {
+            var resources = new SearchResources(fixture);
+            await resources.CreateHotelsBlobContainerAsync(populate);
             return resources;
         }
 
